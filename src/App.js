@@ -9,12 +9,6 @@ import { useState } from "react";
 export default function App() {
   const [items, setItems] = useState([]);
 
-  const sortingListView = [
-    "Sort by Input Order",
-    "Sort by Description",
-    "Sort by Packed Status",
-  ];
-
   function addNewItems(item) {
     setItems((items) => [...items, item]);
   }
@@ -38,18 +32,6 @@ export default function App() {
     return { packedItems, totalItems, packedPercentage };
   }
 
-  function itemSorting(data) {
-    if (data === "Sort by Input Order") {
-      setItems((prev) => [...prev].sort((a, b) => a.id - b.id));
-    } else if (data === "Sort by Description") {
-      setItems((prev) =>
-        [...prev].sort((a, b) => a.description.localeCompare(b.description)),
-      );
-    } else if (data === "Sort by Packed Status") {
-      setItems((prev) => [...prev].sort((a, b) => a.packed - b.packed));
-    }
-  }
-
   return (
     <div className="app">
       <Logo />
@@ -58,8 +40,6 @@ export default function App() {
         items={items}
         onRemoveItems={removeItems}
         onUpdateItems={updateItems}
-        sortingListView={sortingListView}
-        itemSorting={itemSorting}
       />
       <Stats packingStats={packingStats} />
     </div>
@@ -119,17 +99,28 @@ function Form({ onAddItems }) {
   );
 }
 
-function PackingList({
-  items,
-  onRemoveItems,
-  onUpdateItems,
-  sortingListView,
-  itemSorting,
-}) {
+function PackingList({ items, onRemoveItems, onUpdateItems }) {
+  const [sortBy, setSortBy] = useState("input");
+
+  let sortedItems;
+
+  if (sortBy === "input") sortedItems = items;
+
+  if (sortBy === "description") {
+    sortedItems = items
+      .slice()
+      .sort((a, b) => a.description.localeCompare(b.description));
+  }
+
+  if (sortBy === "packed") {
+    sortedItems = items
+      .slice()
+      .sort((a, b) => Number(a.packed) - Number(b.packed));
+  }
   return (
     <div className="list">
       <ul>
-        {items.map((item) => {
+        {sortedItems.map((item) => {
           return (
             <Item
               item={item}
@@ -141,14 +132,10 @@ function PackingList({
         })}
       </ul>
       <div className="actions">
-        <select onChange={(e) => itemSorting(e.target.value)}>
-          {sortingListView.map((item) => {
-            return (
-              <option value={item} key={item}>
-                {item}
-              </option>
-            );
-          })}
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+          <option value="input">Sort by input order</option>
+          <option value="description">Sort by description</option>
+          <option value="packed">Sort by packed status</option>
         </select>
       </div>
     </div>
