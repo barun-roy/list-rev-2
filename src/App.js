@@ -1,25 +1,192 @@
-import logo from './logo.svg';
-import './App.css';
+import { useState } from "react";
 
-function App() {
+// const initialItems = [
+//   { id: 1, description: "Passports", quantity: 2, packed: false },
+//   { id: 2, description: "Socks", quantity: 12, packed: false },
+//   { id: 3, description: "Charger", quantity: 1, packed: true },
+// ];
+
+export default function App() {
+  const [items, setItems] = useState([]);
+
+  const sortingListView = [
+    "Sort by Input Order",
+    "Sort by Description",
+    "Sort by Packed Status",
+  ];
+
+  function addNewItems(item) {
+    setItems((items) => [...items, item]);
+  }
+
+  function removeItems(id) {
+    setItems((items) => items.filter((item) => item.id !== id));
+  }
+
+  function updateItems(id) {
+    setItems((items) =>
+      items.map((item) =>
+        item.id === id ? { ...item, packed: !item.packed } : item,
+      ),
+    );
+  }
+
+  function packingStats() {
+    const totalItems = items.length;
+    const packedItems = items.filter((item) => item.packed === true).length;
+    const packedPercentage = Math.floor((packedItems / totalItems) * 100);
+    return { packedItems, totalItems, packedPercentage };
+  }
+
+  function itemSorting(data) {
+    if (data === "Sort by Input Order") {
+      setItems((prev) => [...prev].sort((a, b) => a.id - b.id));
+    } else if (data === "Sort by Description") {
+      setItems((prev) =>
+        [...prev].sort((a, b) => a.description.localeCompare(b.description)),
+      );
+    } else if (data === "Sort by Packed Status") {
+      setItems((prev) => [...prev].sort((a, b) => a.packed - b.packed));
+    }
+  }
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="app">
+      <Logo />
+      <Form onAddItems={addNewItems} />
+      <PackingList
+        items={items}
+        onRemoveItems={removeItems}
+        onUpdateItems={updateItems}
+        sortingListView={sortingListView}
+        itemSorting={itemSorting}
+      />
+      <Stats packingStats={packingStats} />
     </div>
   );
 }
 
-export default App;
+function Logo() {
+  return <h1>🌴 Far Away 💼</h1>;
+}
+
+function Form({ onAddItems }) {
+  const [description, setDescription] = useState("");
+  const [quantity, setQuantity] = useState(1);
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    const newItem = {
+      id: Date.now(),
+      description,
+      quantity,
+      packed: false,
+    };
+    setDescription("");
+    setQuantity(1);
+    onAddItems(newItem);
+  }
+
+  return (
+    <form className="add-form" onSubmit={(e) => handleSubmit(e)}>
+      <h3>What do you need for your 😎 trip</h3>
+      <select
+        value={quantity}
+        onChange={(e) => setQuantity(Number(e.target.value))}
+      >
+        {/* <option value={1}>1</option>
+        <option value={2}>2</option>
+        <option value={3}>3</option> */}
+
+        {Array.from({ length: 20 }, (_, i) => i + 1).map((opt) => {
+          return (
+            <option value={opt} key={opt}>
+              {opt}
+            </option>
+          );
+        })}
+      </select>
+
+      <input
+        type="text"
+        placeholder="Item..."
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+      />
+
+      <button>Add</button>
+    </form>
+  );
+}
+
+function PackingList({
+  items,
+  onRemoveItems,
+  onUpdateItems,
+  sortingListView,
+  itemSorting,
+}) {
+  return (
+    <div className="list">
+      <ul>
+        {items.map((item) => {
+          return (
+            <Item
+              item={item}
+              key={item.id}
+              onRemoveItems={onRemoveItems}
+              onUpdateItems={onUpdateItems}
+            />
+          );
+        })}
+      </ul>
+      <div className="actions">
+        <select onChange={(e) => itemSorting(e.target.value)}>
+          {sortingListView.map((item) => {
+            return (
+              <option value={item} key={item}>
+                {item}
+              </option>
+            );
+          })}
+        </select>
+      </div>
+    </div>
+  );
+}
+
+function Item({ item, onRemoveItems, onUpdateItems }) {
+  return (
+    <li>
+      <input
+        type="checkbox"
+        checked={item.packed}
+        onChange={() => onUpdateItems(item.id)}
+      />
+      <span style={item.packed ? { textDecoration: "line-through" } : {}}>
+        {item.quantity} {item.description}
+      </span>
+      <button onClick={() => onRemoveItems(item.id)}>❌</button>
+    </li>
+  );
+}
+
+function Stats({ packingStats }) {
+  const { totalItems, packedItems, packedPercentage } = packingStats();
+  if (totalItems === 0)
+    return (
+      <p className="stats">
+        <em>Start adding some items to your packing list 🛸</em>
+      </p>
+    );
+  return (
+    <footer className="stats">
+      <em>
+        {packedPercentage === 100
+          ? `You got everything! Ready to go 🚅🛫🛸🛳️🛣️🏞️`
+          : `💼 You have ${totalItems} items on your list, and you have already packed
+        ${packedItems} items (${totalItems !== 0 ? packedPercentage : 0}%)`}
+      </em>
+    </footer>
+  );
+}
